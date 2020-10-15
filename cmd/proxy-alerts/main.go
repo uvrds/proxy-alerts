@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -65,60 +66,63 @@ type Message struct {
 	GroupKey    string `json:"groupKey"`
 }
 
-type TestMessage []struct {
-	Labels struct {
-		TestMsg string `json:"test_msg"`
-	} `json:"labels"`
-	Annotations  interface{} `json:"annotations"`
-	StartsAt     time.Time   `json:"startsAt"`
-	EndsAt       time.Time   `json:"endsAt"`
-	GeneratorURL string      `json:"generatorURL"`
-}
-
 type data struct {
 	Url   string
 	Token string
-	Body  string
+	Body  map[string]string
 }
 
 //Parsing response body
-func parsingBody(req *http.Request) string {
-
+func parsingBodyCreateMessage(req *http.Request) string {
 	//Read byte
 	content, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Printf("err: %v\n", err)
 	}
 
-	//Parsing json test Message
-	var respRancher TestMessage
-	err = json.Unmarshal(content, &respRancher)
+	//Parsing json Message
+	var message Message
+	err = json.Unmarshal(content, &message)
 	if err != nil {
 		log.Printf("warn: %v\n", err)
 	}
-	return respRancher[0].Labels.TestMsg
+
+	htmlTemplate := message.Alerts[0].Labels.AlertName +
+		"\n---" +
+		"\nВремя инцидента: " + message.Alerts[0].StartsAt.String() +
+		"\nКластер:" + message.Alerts[0].Labels.ClusterName +
+		"\nУзел: " + message.Alerts[0].Labels.Instance +
+		"\nУровень инцидента: " + message.Alerts[0].Labels.Severity +
+
+		"\n\nТекущие значение: " + message.Alerts[0].Annotations.CurrentValue +
+		"\nПороговое значение: " + message.Alerts[0].Labels.ThresholdValue +
+		"\nВыражение: " + message.Alerts[0].Labels.Expression
+
+	return htmlTemplate
 }
 
 func handleRequestAndRedirect(res http.ResponseWriter, req *http.Request) {
-	body := parsingBody(req)
 
+	bodyReq := parsingBodyCreateMessage(req)
+	options, err := json.Marshal(map[string]string{
+		"chat_id": "246186171",
+		"text":    bodyReq,
+	})
 	data := data{
 		Url:   os.Getenv("URL"),
 		Token: os.Getenv("TOKEN"),
-		Body:  body,
 	}
 
-	resp, err := http.Get(data.Url + "/" + data.Token + "/sendMessage?" + "chat_id=246186171&parse_mode=markdown&text=" + data.Body)
+	resp, err := http.Post(data.Url+"/"+data.Token+"/sendMessage", "Accept: application/json", bytes.NewBuffer(options))
 	if err != nil {
 		log.Printf("err: %v\n", err)
 	}
-	log.Printf("res: %v\n", resp)
+	log.Printf("REPONSE: %v\n", resp)
 	log.Printf("BODY: %v\n", data.Body)
 }
 
 func main() {
 	// start server
 	http.HandleFunc("/", handleRequestAndRedirect)
-
 	log.Fatal(http.ListenAndServe(":8081", nil))
 }
