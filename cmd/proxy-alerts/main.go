@@ -88,7 +88,7 @@ func parsingBodyCreateMessage(req *http.Request) string {
 		log.Printf("warn: %v\n", err)
 	}
 
-	htmlTemplate := message.Status + "\n" +
+	Template := message.Status + "\n" +
 		message.Alerts[0].Labels.AlertName +
 		"\n---" +
 		"\nВремя инцидента: " + message.Alerts[0].StartsAt.String() +
@@ -99,7 +99,7 @@ func parsingBodyCreateMessage(req *http.Request) string {
 		"\nПороговое значение: " + message.Alerts[0].Labels.ThresholdValue +
 		"\nВыражение: " + message.Alerts[0].Labels.Expression
 
-	return htmlTemplate
+	return Template
 }
 
 func handleRequestAndRedirect(res http.ResponseWriter, req *http.Request) {
