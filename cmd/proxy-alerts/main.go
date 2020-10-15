@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -87,13 +88,13 @@ func parsingBodyCreateMessage(req *http.Request) string {
 		log.Printf("warn: %v\n", err)
 	}
 
-	htmlTemplate := message.Alerts[0].Labels.AlertName +
+	htmlTemplate := message.Status + "\n" +
+		message.Alerts[0].Labels.AlertName +
 		"\n---" +
 		"\nВремя инцидента: " + message.Alerts[0].StartsAt.String() +
 		"\nКластер:" + message.Alerts[0].Labels.ClusterName +
 		"\nУзел: " + message.Alerts[0].Labels.Instance +
 		"\nУровень инцидента: " + message.Alerts[0].Labels.Severity +
-
 		"\n\nТекущие значение: " + message.Alerts[0].Annotations.CurrentValue +
 		"\nПороговое значение: " + message.Alerts[0].Labels.ThresholdValue +
 		"\nВыражение: " + message.Alerts[0].Labels.Expression
@@ -104,8 +105,9 @@ func parsingBodyCreateMessage(req *http.Request) string {
 func handleRequestAndRedirect(res http.ResponseWriter, req *http.Request) {
 
 	bodyReq := parsingBodyCreateMessage(req)
+	chatId := strings.Split(req.RequestURI, "/")
 	options, err := json.Marshal(map[string]string{
-		"chat_id": "246186171",
+		"chat_id": chatId[1],
 		"text":    bodyReq,
 	})
 	data := data{
@@ -118,7 +120,6 @@ func handleRequestAndRedirect(res http.ResponseWriter, req *http.Request) {
 		log.Printf("err: %v\n", err)
 	}
 	log.Printf("REPONSE: %v\n", resp)
-	log.Printf("BODY: %v\n", data.Body)
 }
 
 func main() {
