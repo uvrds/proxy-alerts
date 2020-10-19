@@ -1,1 +1,2 @@
-# Пересылает  алерты от ранчера в канал теллеграмм
+# sends alerts from rancher to telegram via webhook
+

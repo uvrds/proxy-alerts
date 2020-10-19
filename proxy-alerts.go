@@ -3,11 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -87,8 +87,24 @@ func parsingBodyCreateMessage(req *http.Request) string {
 	if err != nil {
 		log.Printf("warn: %v\n", err)
 	}
+	log.Printf("warn: %v\n", message)
+	status := ""
 
-	Template := message.Status + "\n" +
+	if message.Status == "firing" {
+		status = "🔥"
+	} else if message.Status == "resolved" {
+		status = "✅"
+	}
+	severity := ""
+	if message.Alerts[0].Labels.Severity == "critical" {
+		severity = "❗"
+	} else if message.Alerts[0].Labels.Severity == "warning" {
+		severity = "⚠"
+	} else if message.Alerts[0].Labels.Severity == "info" {
+		severity = "ℹ"
+	}
+
+	Template := severity + status + "\n" +
 		message.Alerts[0].Labels.AlertName +
 		"\n---" +
 		"\nВремя инцидента: " + message.Alerts[0].StartsAt.String() +
@@ -103,23 +119,28 @@ func parsingBodyCreateMessage(req *http.Request) string {
 }
 
 func handleRequestAndRedirect(res http.ResponseWriter, req *http.Request) {
-
+	res = nil
 	bodyReq := parsingBodyCreateMessage(req)
-	chatId := strings.Split(req.RequestURI, "/")
-	options, err := json.Marshal(map[string]string{
-		"chat_id": chatId[1],
-		"text":    bodyReq,
-	})
-	data := data{
-		Url:   os.Getenv("URL"),
-		Token: os.Getenv("TOKEN"),
-	}
+	chatsId := []string{"246186171", "257434654"}
+	for i, s := range chatsId {
+		fmt.Println(i, s)
 
-	resp, err := http.Post(data.Url+"/"+data.Token+"/sendMessage", "Accept: application/json", bytes.NewBuffer(options))
-	if err != nil {
-		log.Printf("err: %v\n", err)
+		options, err := json.Marshal(map[string]string{
+			"chat_id": s,
+			"text":    bodyReq,
+		})
+		data := data{
+			Url:   os.Getenv("URL"),
+			Token: os.Getenv("TOKEN"),
+		}
+
+		resp, err := http.Post(data.Url+"/"+data.Token+"/sendMessage", "Accept: application/json", bytes.NewBuffer(options))
+		if err != nil {
+			log.Printf("err: %v\n", err)
+		}
+		log.Printf("REPONSE: %v\n", resp)
+		log.Printf("Template: %v\n", bodyReq)
 	}
-	log.Printf("REPONSE: %v\n", resp)
 }
 
 func main() {
