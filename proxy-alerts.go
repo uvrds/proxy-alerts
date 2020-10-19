@@ -3,13 +3,17 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
+
+var sliceID []string
 
 type Message struct {
 	Receiver string `json:"receiver"`
@@ -121,8 +125,8 @@ func parsingBodyCreateMessage(req *http.Request) string {
 func handleRequestAndRedirect(res http.ResponseWriter, req *http.Request) {
 	res = nil
 	bodyReq := parsingBodyCreateMessage(req)
-	chatsId := []string{"246186171", "257434654"}
-	for i, s := range chatsId {
+
+	for i, s := range sliceID {
 		fmt.Println(i, s)
 
 		options, err := json.Marshal(map[string]string{
@@ -144,6 +148,16 @@ func handleRequestAndRedirect(res http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+	ID := flag.String("ID", "nil",
+		"Please user id telegram --ID 2342352")
+	flag.Parse()
+
+	if *ID == "nil" {
+		log.Fatal("ID : " + *ID)
+	}
+	splitID := strings.Split(*ID, ",")
+	sliceID = splitID
+
 	// start server
 	http.HandleFunc("/", handleRequestAndRedirect)
 	log.Fatal(http.ListenAndServe(":8081", nil))
