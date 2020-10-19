@@ -152,13 +152,20 @@ func main() {
 		"Please user id telegram --ID 2342352")
 	flag.Parse()
 
+	port := flag.String("port", "nil",
+		"Please input port, default listen: 8081")
+	flag.Parse()
+
 	if *ID == "nil" {
 		log.Fatal("ID : " + *ID)
+	}
+	if *port == "nil" {
+		*port = "8081"
 	}
 	splitID := strings.Split(*ID, ",")
 	sliceID = splitID
 
 	// start server
 	http.HandleFunc("/", handleRequestAndRedirect)
-	log.Fatal(http.ListenAndServe(":8081", nil))
+	log.Fatal(http.ListenAndServe(":"+*port, nil))
 }
