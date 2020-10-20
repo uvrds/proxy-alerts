@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -137,7 +138,7 @@ func handleRequestAndRedirect(res http.ResponseWriter, req *http.Request) {
 			Url:   os.Getenv("URL"),
 			Token: os.Getenv("TOKEN"),
 		}
-
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 		resp, err := http.Post(data.Url+"/"+data.Token+"/sendMessage", "Accept: application/json", bytes.NewBuffer(options))
 		if err != nil {
 			log.Printf("err: %v\n", err)
